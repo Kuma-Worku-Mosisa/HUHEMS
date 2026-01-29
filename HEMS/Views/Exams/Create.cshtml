@@ -1,0 +1,82 @@
+﻿@model HEMS.Models.Exam
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h2 class="mb-0 h4"><i class="bi bi-plus-circle me-2"></i>Setup New Exam</h2>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="ExamTitle" class="form-label fw-bold">Exam Title</label>
+                            <input asp-for="ExamTitle" class="form-control form-control-lg" placeholder="e.g. Software Engineering Pre-Internship" />
+                            <span asp-validation-for="ExamTitle" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="AcademicYear" class="form-label fw-bold">Academic Year</label>
+                                <select asp-for="AcademicYear" class="form-select">
+                                    @* Generates a range from 2 years ago to 3 years in the future *@
+                                    @for (int y = DateTime.Now.Year - 8; y <= DateTime.Now.Year + 3; y++)
+                                    {
+                                        <option value="@y">@y</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="AcademicYear" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="DurationMinutes" class="form-label fw-bold">Duration (Mins)</label>
+                                <div class="input-group">
+                                    <input asp-for="DurationMinutes" class="form-control" type="number" min="1" placeholder="60" />
+                                    <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                                </div>
+                                <span asp-validation-for="DurationMinutes" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="DefaultMark" class="form-label fw-bold">Marks Per Q</label>
+                                <input asp-for="DefaultMark" class="form-control" type="number" step="0.1" min="0.1" />
+                                <span asp-validation-for="DefaultMark" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Description / Instructions</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter exam instructions for students..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ExamStatus" class="form-label fw-bold">Initial Status</label>
+                            <select asp-for="ExamStatus" class="form-select bg-light">
+                                <option value="Draft">Draft (Hidden from Students)</option>
+                                <option value="Published">Published (Live for Students)</option>
+                            </select>
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-link text-secondary text-decoration-none">
+                                <i class="bi bi-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-success px-5 py-2 shadow-sm fw-bold">
+                                <i class="bi bi-check-lg"></i> Create Exam
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

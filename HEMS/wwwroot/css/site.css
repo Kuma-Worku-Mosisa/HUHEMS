@@ -1,0 +1,277 @@
+/* --- Global Styles --- */
+html {
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    margin-bottom: 60px;
+    background-color: #f8f9fa;
+    overflow-x: hidden;
+}
+
+:root {
+    --sidebar-width: 260px;
+    --primary-dark: #2c3e50;
+    --accent-color: #3498db;
+}
+
+/* --- Form Focus & UI --- */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus,
+.form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+/* --- Landing Page Global Fixes --- */
+.landing-body {
+    margin-bottom: 0 !important; /* Removes the gap under the footer */
+    background-color: #2c3e50; /* Matches hero/footer to hide pull-down white space */
+}
+
+/* --- Landing Page Sections --- */
+.hero-section {
+    background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(44, 62, 80, 0.9)), url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+.feature-card {
+    transition: transform 0.3s;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+    }
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    background: #eef2f7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: #3498db;
+    font-size: 1.5rem;
+}
+
+
+/* --- Authentication (Login/Register) --- */
+.auth-bg {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.auth-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    background: white;
+}
+
+.btn-auth {
+    background-color: #3498db;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: 0.3s;
+    color: white;
+}
+
+    .btn-auth:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        color: white;
+    }
+
+/* --- Sidebar Structure --- */
+#wrapper {
+    display: flex;
+    align-items: stretch;
+    min-height: 100vh;
+}
+
+#sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: var(--primary-dark);
+    color: #fff;
+    transition: all 0.3s;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+    #sidebar .sidebar-header {
+        padding: 20px;
+        background: #1a252f;
+        border-bottom: 1px solid #34495e;
+    }
+
+    #sidebar ul.components {
+        padding: 20px 0;
+        flex-grow: 1;
+    }
+
+.sidebar-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #7f8c8d;
+    padding: 10px 25px;
+    letter-spacing: 1px;
+}
+
+#sidebar ul li a, #sidebar .logout-link {
+    padding: 12px 25px;
+    display: block;
+    color: #bdc3c7;
+    text-decoration: none;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+    #sidebar ul li a:hover, #sidebar .logout-link:hover {
+        color: #fff;
+        background: #34495e;
+    }
+
+#sidebar ul li.active > a {
+    color: #fff;
+    background: var(--accent-color);
+    border-left: 4px solid #fff;
+}
+
+.sidebar-footer {
+    border-top: 1px solid #34495e;
+    padding: 10px 0;
+}
+
+/* --- Content Area --- */
+#content {
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.top-navbar {
+    background: #fff;
+    padding: 15px 30px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.main-container {
+    padding: 30px;
+}
+
+/* --- Exam Taking Interface (Moodle Style) --- */
+.question-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+    gap: 5px;
+}
+
+.nav-box {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.85rem;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+
+    .nav-box:hover {
+        background-color: #e9ecef;
+        color: #000;
+    }
+
+    .nav-box.current {
+        border: 3px solid #000 !important;
+        font-weight: bold;
+    }
+
+    .nav-box.answered {
+        background-color: #6c757d;
+        color: white;
+    }
+
+.quiz-info-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+}
+
+.timer-container {
+    border: 1px solid #dc3545;
+    padding: 5px 10px;
+    color: #000;
+    display: inline-block;
+    background: #fff;
+}
+
+.question-content-box {
+    background-color: #e7f3ff;
+    border-radius: 8px;
+    padding: 25px;
+}
+
+.question-sidebar-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Gray background for answered questions */
+.nav-box.answered {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
+/* Red triangle for flagged questions */
+.nav-box.flagged {
+    position: relative;
+}
+
+    .nav-box.flagged::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        /* This creates the triangle shape */
+        border-style: solid;
+        border-width: 0 12px 12px 0;
+        border-color: transparent #dc3545 transparent transparent;
+    }

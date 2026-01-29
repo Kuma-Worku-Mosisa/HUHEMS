@@ -1,0 +1,121 @@
+﻿@model HEMS.Models.Question
+@{
+    int currentIndex = ViewBag.Index;
+    int total = ViewBag.Total;
+    int durationMinutes = Model.Exam.DurationMinutes > 0 ? Model.Exam.DurationMinutes : 30;
+
+    // Retrieve persistent states from ViewBag (sent by StudentController)
+    var answeredIndices = ViewBag.AnsweredIndices as List<int> ?? new List<int>();
+    var flaggedIndices = ViewBag.FlaggedIndices as List<int> ?? new List<int>();
+
+    // Check if this specific question was already answered to keep radio selected
+    int? selectedChoiceId = ViewBag.SelectedChoiceId;
+    bool isCurrentlyFlagged = flaggedIndices.Contains(currentIndex);
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="d-flex justify-content-end mb-3">
+                <div class="timer-container">
+                    Time left <span id="timer" class="fw-bold">--:--:--</span>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2 border-end question-sidebar-info">
+                            <h5 class="fw-bold text-dark">Question @(currentIndex + 1)</h5>
+                            <p class="mb-1 text-muted">@(selectedChoiceId.HasValue ? "Saved" : "Not yet answered")</p>
+                            <p class="mb-3">Marked out of 1.00</p>
+
+                            <a href="javascript:void(0);" id="flagToggle" class="text-decoration-none">
+                                <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill text-danger" : "bi-flag")"></i>
+                                @(isCurrentlyFlagged ? "Remove flag" : "Flag question")
+                            </a>
+                        </div>
+
+                        <div class="col-md-10">
+                            <div class="question-content-box mb-4">
+                                <p class="fs-5 text-dark">@Model.QuestionText</p>
+
+                                <form asp-controller="Student" asp-action="SubmitAnswer" method="post" id="examForm">
+                                    <input type="hidden" name="qId" value="@Model.QuestionId" />
+                                    <input type="hidden" name="examId" value="@Model.ExamId" />
+                                    <input type="hidden" name="nextIdx" value="@(currentIndex + 1)" />
+                                    <input type="hidden" name="flagged" id="flaggedInput" value="@isCurrentlyFlagged.ToString().ToLower()" />
+
+                                    <div class="options mt-4">
+                                        @foreach (var choice in Model.Choices)
+                                        {
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input option-input" type="radio" name="choiceId"
+                                                       value="@choice.ChoiceId" id="choice_@choice.ChoiceId" required
+                                                       @(selectedChoiceId == choice.ChoiceId ? "checked" : "")>
+                                                <label class="form-check-label ms-2" for="choice_@choice.ChoiceId">
+                                                    @choice.ChoiceText
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                    <a href="javascript:void(0);" onclick="clearChoice()" class="small text-primary text-decoration-none mt-2 d-block">Clear my choice</a>
+                                </form>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                @if (currentIndex > 0)
+                                {
+                                    <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@(currentIndex - 1)"
+                                       class="btn btn-secondary px-4">Previous question</a>
+                                }
+                                else
+                                {
+
+                                    <div></div>
+                                }
+
+                                <button type="button" onclick="submitExamForm()" class="btn btn-primary px-4">
+                                    @(currentIndex == total - 1 ? "Finish attempt..." : "Next question")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="quiz-info-box">
+                <h6 class="fw-bold mb-3">Quiz navigation</h6>
+                <div class="question-nav-grid mb-4">
+                    @for (int i = 0; i < total; i++)
+                    {
+                        <a asp-action="TakeExam" asp-route-examId="@Model.ExamId" asp-route-index="@i"
+                           id="nav-box-@i"
+                           class="nav-box @(i == currentIndex ? "current" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
+                            @(i + 1)
+                        </a>
+                    }
+                </div>
+                <a asp-action="ViewResult" asp-route-examId="@Model.ExamId" class="text-decoration-none small text-dark">Finish exam ...</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/exam-timer.js" asp-append-version="true"></script>
+    <script>
+        // Start the persistent timer
+        initPersistentTimer(@Model.ExamId, @durationMinutes);
+
+        // Handle UI flagging and answering
+        initQuestionInteractions(@currentIndex, @Model.ExamId, @Model.QuestionId);
+
+        function clearChoice() {
+            document.querySelectorAll('.option-input').forEach(opt => opt.checked = false);
+            document.getElementById('nav-box-' + @currentIndex).classList.remove('answered');
+        }
+    </script>
+}

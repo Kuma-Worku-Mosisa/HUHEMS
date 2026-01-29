@@ -1,0 +1,20 @@
+﻿/* Custom Modal Styling */
+#deleteModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#deleteModal .modal-header {
+    border-bottom: none;
+    padding-top: 1.5rem;
+}
+
+#deleteModal .modal-footer {
+    border-top: none;
+    padding-bottom: 1.5rem;
+}
+
+.border-danger-custom {
+    border-left: 5px solid #dc3545 !important;
+    background-color: #f8f9fa;
+}

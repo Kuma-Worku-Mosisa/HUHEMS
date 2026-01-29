@@ -1,0 +1,132 @@
+﻿@model IEnumerable<HEMS.Controllers.ExamReportViewModel>
+
+@{
+    ViewData["Title"] = "Exam Report";
+    var passCount = Model.Count(x => x.Percentage >= 50);
+    var avgScore = Model.Any() ? Math.Round(Model.Average(x => x.Percentage), 1) : 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-action="Index">Exams</a></li>
+                    <li class="breadcrumb-item active">Report</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold">@ViewBag.ExamTitle</h2>
+        </div>
+        <div class="btn-group">
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="bi bi-printer"></i> Print Report
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body">
+                        <h6>Total Attempts</h6>
+                        <h2 class="mb-0">@Model.Count()</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body">
+                        <h6>Average Percentage</h6>
+                        <h2 class="mb-0">@avgScore%</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-info text-white">
+                    <div class="card-body">
+                        <h6>Pass Rate</h6>
+                        <h2 class="mb-0">@passCount / @Model.Count()</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Student Name</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Date Taken</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">@item.StudentName</div>
+                                </td>
+                                <td>
+                                    <span class="text-primary fw-bold">@item.Score</span>
+                                    <span class="text-muted">/ @item.TotalQuestions</span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px; width: 100px;">
+                                        <div class="progress-bar @(item.Percentage >= 50 ? "bg-success" : "bg-danger")"
+                                             role="progressbar" style="width: @item.Percentage%"></div>
+                                    </div>
+                                    <small class="text-muted">@item.Percentage%</small>
+                                </td>
+                                <td>@item.DateTaken.ToString("MMM dd, yyyy")</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill @(item.Percentage >= 50 ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") px-3">
+                                        @(item.Percentage >= 50 ? "Passed" : "Failed")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No students have attempted this exam yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling for the print button and progress bars */
+    .bg-success-subtle {
+        background-color: #e8f5e9;
+    }
+
+    .bg-danger-subtle {
+        background-color: #ffebee;
+    }
+
+    @@media print {
+        .btn-group, nav {
+            display: none !important;
+        }
+
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+    }
+</style>

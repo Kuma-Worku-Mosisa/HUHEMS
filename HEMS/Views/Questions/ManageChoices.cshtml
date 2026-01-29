@@ -1,0 +1,137 @@
+﻿@model HEMS.Models.Question
+
+@{
+    ViewData["Title"] = "Manage Choices";
+
+    // Flexible Logic: Calculate next letter (A, B, C...) based on current count
+    int currentCount = Model.Choices?.Count ?? 0;
+    char nextLetter = (char)('A' + currentCount);
+
+    // Safety check: if somehow it exceeds Z, stop at Z or handle gracefully
+    if (nextLetter > 'Z') nextLetter = 'Z';
+
+    string placeholderText = $"e.g. Option {nextLetter}";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body bg-light rounded">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-controller="Exams" asp-action="Index">Exams</a></li>
+                            <li class="breadcrumb-item"><a asp-controller="Exams" asp-action="Details" asp-route-id="@Model.ExamId">Exam Details</a></li>
+                            <li class="breadcrumb-item active">Manage Choices</li>
+                        </ol>
+                    </nav>
+                    <h5 class="text-muted small uppercase fw-bold">Question Context:</h5>
+                    <h3 class="fw-bold">@Model.QuestionText</h3>
+                    <span class="badge bg-info text-dark">Weight: @Model.MarkWeight.ToString("0.##") Marks</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card shadow-sm border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add New Choice</h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="AddChoice" method="post">
+                                <input type="hidden" name="questionId" value="@Model.QuestionId" />
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Choice Text</label>
+                                    <input name="choiceText"
+                                           class="form-control form-control-lg"
+                                           placeholder="@placeholderText"
+                                           required
+                                           autofocus
+                                           autocomplete="off" />
+                                </div>
+
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="isAnswer" value="true" id="isCorrectSwitch">
+                                    <label class="form-check-label fw-bold" for="isCorrectSwitch">
+                                        Mark as Correct Answer
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 shadow-sm py-2">
+                                    <i class="bi bi-plus-lg"></i> Add Option @nextLetter
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary mt-3 small">
+                        <i class="bi bi-info-circle"></i> Tip: Use unique text for each option to avoid duplicate warnings.
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Current Options</h5>
+                            <span class="badge bg-secondary">@currentCount Total</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                                @if (Model.Choices == null || !Model.Choices.Any())
+                                {
+                                    <li class="list-group-item text-center py-5 text-muted">
+                                        <i class="bi bi-card-list d-block mb-2" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                                        No choices added yet.<br />Start by adding <strong>Option A</strong> on the left.
+                                    </li>
+                                }
+                                else
+                                {
+                                    foreach (var choice in Model.Choices)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                            <div class="d-flex align-items-center">
+                                                @if (choice.IsAnswer)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success me-3" style="font-size: 1.3rem;"></i>
+                                                    <span class="fw-bold text-success">@choice.ChoiceText</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-circle me-3 text-muted"></i>
+                                                    <span>@choice.ChoiceText</span>
+                                                }
+                                            </div>
+
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge @(choice.IsAnswer ? "bg-success" : "bg-light text-dark border") me-3">
+                                                    @(choice.IsAnswer ? "Correct" : "Incorrect")
+                                                </span>
+
+                                                <form asp-action="DeleteChoice" method="post" onsubmit="return confirm('Delete this option?');" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="choiceId" value="@choice.ChoiceId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-white border-top-0 p-3">
+                            <a asp-controller="Exams" asp-action="Details" asp-route-id="@Model.ExamId" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-arrow-left"></i> Finished - Back to Exam
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+}
