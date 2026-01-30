@@ -1,0 +1,246 @@
+﻿/* --- SECURITY: ANTI-CHEAT LAYER --- */
+.exam-secure-zone {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default;
+}
+
+/* Hide content if the user tries to print or Save as PDF */
+@media print {
+    body {
+        display: none !important;
+    }
+}
+
+/* --- EXAM HEADER & TIMER --- */
+.exam-header-bar {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #edf2f7;
+}
+
+.timer-display {
+    background: #1a202c;
+    color: #f6ad55;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* --- CHOICE CARDS (INTERACTIVE OPTIONS) --- */
+.choices-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.choice-card {
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+    .choice-card:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+        transform: translateX(5px);
+    }
+
+.choice-alpha {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 26px;
+    text-align: center;
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #718096;
+    background: #fff;
+}
+
+/* Selected State */
+.btn-check:checked + .choice-card {
+    background-color: #ebf8ff;
+    border-color: #3182ce;
+    color: #2b6cb0;
+}
+
+    .btn-check:checked + .choice-card .choice-alpha {
+        background: #3182ce;
+        border-color: #3182ce;
+        color: white;
+    }
+
+/* --- NAVIGATION BOX (Hardened Grid) --- */
+.sticky-nav {
+    position: sticky;
+    top: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.nav-header {
+    background: #f7fafc;
+    padding: 12px 15px;
+    font-weight: bold;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+}
+
+.question-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    padding: 15px;
+}
+
+.grid-box {
+    position: relative; /* For the triangular flag */
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    border-radius: 6px;
+    text-decoration: none !important;
+    color: #4a5568;
+    font-weight: 700;
+    font-size: 0.95rem;
+    overflow: hidden; /* Keeps the half-fill contained */
+    transition: all 0.2s ease;
+}
+
+    .grid-box:hover {
+        border-color: #cbd5e0;
+        transform: translateY(-2px);
+    }
+
+    /* Active Highlight */
+    .grid-box.active {
+        border: 2px solid #0d6efd;
+        box-shadow: 0 0 8px rgba(13, 110, 253, 0.4);
+        background-color: #fff;
+        z-index: 1;
+    }
+
+    /* Red Triangular Flag (Top Right) */
+    .grid-box.flagged::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 14px 14px 0;
+        border-color: transparent #dc3545 transparent transparent;
+    }
+
+    /* Half-filled Gray Progress (Bottom Half) */
+    .grid-box.answered {
+        background: linear-gradient(to bottom, #ffffff 50%, #718096 50%);
+    }
+
+/* --- BUTTONS & UTILS --- */
+.btn-clear-choice {
+    font-size: 0.85rem;
+    color: #718096;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+    .btn-clear-choice:hover {
+        color: #e53e3e;
+    }
+
+.next-btn {
+    border-radius: 50px;
+    transition: all 0.3s;
+}
+
+    .next-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+/* --- CUSTOM MODAL STYLING --- */
+#deleteModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.border-danger-custom {
+    border-left: 5px solid #dc3545 !important;
+    background-color: #f8f9fa;
+}
+
+/* Circular Letter Indicator (A, B, C...) */
+.choice-alpha {
+    display: inline-block;
+    width: 34px;
+    height: 34px;
+    line-height: 30px; /* Adjust for border thickness */
+    text-align: center;
+    border: 2px solid #e2e8f0;
+    border-radius: 50%;
+    font-weight: 800;
+    color: #718096;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    flex-shrink: 0; /* Prevents circle from squishing on long text */
+}
+
+/* When the choice is hovered */
+.choice-card:hover .choice-alpha {
+    border-color: #cbd5e0;
+    color: #2d3748;
+}
+
+/* When the radio button is checked, highlight the letter circle blue */
+.btn-check:checked + .choice-card .choice-alpha {
+    background: #3182ce;
+    border-color: #3182ce;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(49, 130, 206, 0.4);
+}
+
+/* Ensure the text inside the card looks clean */
+.choice-text {
+    font-size: 1.05rem;
+    color: #2d3748;
+    line-height: 1.4;
+}
+
+/* Modal Refinement */
+#reusableConfirmModal .modal-content {
+    border-radius: 20px;
+}
+
+#reusableConfirmModal .modal-header {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s ease;
+}

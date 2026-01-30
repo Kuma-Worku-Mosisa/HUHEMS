@@ -25,23 +25,29 @@
             @foreach (var exam in Model)
             {
                 <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card shadow-sm border-0 h-100 transition-all hover-shadow" style="border-radius: 15px;">
                         <div class="card-body">
                             <h5 class="card-title fw-bold text-primary">@exam.ExamTitle</h5>
                             <p class="card-text text-muted small">
                                 @(string.IsNullOrEmpty(exam.Description) ? "No description provided." : exam.Description)
                             </p>
                             <ul class="list-unstyled mb-4">
-                                <li><i class="bi bi-clock me-2"></i><strong>Duration:</strong> @exam.DurationMinutes mins</li>
-                                <li><i class="bi bi-calendar3 me-2"></i><strong>Year:</strong> @exam.AcademicYear</li>
+                                <li><i class="bi bi-clock me-2 text-secondary"></i><strong>Duration:</strong> @exam.DurationMinutes mins</li>
+                                <li><i class="bi bi-calendar3 me-2 text-secondary"></i><strong>Year:</strong> @exam.AcademicYear</li>
                             </ul>
                         </div>
-                        <div class="card-footer bg-white border-0 pb-3">
-                            <a asp-action="TakeExam" asp-route-examId="@exam.ExamId"
-                               class="btn btn-primary w-100 shadow-sm rounded-pill"
-                               onclick="return confirm('Do you want to start this exam? The timer will begin immediately.');">
+                        <div class="card-footer bg-transparent border-0 pb-4">
+                            <button type="button"
+                                    class="btn btn-primary w-100 rounded-pill fw-bold exam-action-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reusableConfirmModal"
+                                    data-title="Start @exam.ExamTitle"
+                                    data-message="Ready to begin? The timer will start immediately and cannot be paused."
+                                    data-target="@Url.Action("TakeExam", "Student", new { examId = exam.ExamId })"
+                                    data-type="link"
+                                    data-exam-id="@exam.ExamId">
                                 Start Exam
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -49,3 +55,29 @@
         }
     </div>
 </div>
+
+@* The Modal is now in its own partial to avoid duplication *@
+<partial name="_ConfirmationModal" />
+
+@section Scripts {
+    <script src="~/js/ui-interactions.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function() {
+            // RESUME FEATURE UI UPDATE
+            $('.exam-action-btn').each(function() {
+                const examId = $(this).data('exam-id');
+                const savedIndex = localStorage.getItem(`resume_exam_${examId}`);
+
+                if (savedIndex !== null) {
+                    $(this).text("Resume Exam");
+                    $(this).removeClass("btn-primary").addClass("btn-success");
+
+                    // Update target URL to include the saved index
+                    const baseUrl = $(this).data('target');
+                    $(this).attr('data-target', `${baseUrl}&index=${savedIndex}`);
+                    $(this).attr('data-message', "Welcome back! You will continue from where you left off.");
+                }
+            });
+        });
+    </script>
+}
