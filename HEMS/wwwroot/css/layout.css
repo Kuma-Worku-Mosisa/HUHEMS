@@ -187,3 +187,147 @@ html, body {
     text-decoration: none;
     font-size: 0.95rem;
 }
+
+/* --- Root Variables --- */
+:root {
+    --brand-primary: #4f46e5;
+    --brand-success: #10b981;
+    --brand-warning: #f59e0b;
+    --brand-danger: #ef4444;
+    --brand-dark: #1e293b;
+    --brand-bg: #f1f5f9;
+}
+
+/* --- Global Styles --- */
+body {
+    background-color: var(--brand-bg);
+    overflow-x: hidden;
+}
+
+/* --- Page Header --- */
+.page-header {
+    background: white;
+    border-bottom: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.btn-popular {
+    border-radius: 8px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Desktop Table Styling --- */
+.table-card {
+    border-radius: 16px;
+    border: none;
+    background: white;
+}
+
+.table thead th {
+    background: #f8fafc;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-top: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc !important;
+    transition: all 0.2s;
+}
+
+/* --- Desktop Action Icons --- */
+.action-col {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.bg-icon-add {
+    background-color: #eef2ff !important;
+    color: #4f46e5 !important;
+}
+
+.bg-icon-view {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+.bg-icon-edit {
+    background-color: #fffbeb !important;
+    color: #d97706 !important;
+}
+
+.bg-icon-stats {
+    background-color: #f0fdf4 !important;
+    color: #16a34a !important;
+}
+
+.bg-icon-delete {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+/* Hover animations for action group */
+.btn-group .btn {
+    transition: all 0.2s ease;
+}
+
+    .btn-group .btn:hover {
+        filter: brightness(0.92);
+        transform: translateY(-1px);
+        z-index: 5;
+    }
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 991.98px) {
+    .desktop-table {
+        display: none;
+    }
+
+    .mobile-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .mobile-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 1.2rem;
+    }
+
+    .btn-mobile-action {
+        padding: 12px;
+        font-size: 0.85rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        transition: transform 0.2s;
+    }
+
+        .btn-mobile-action i {
+            font-size: 1.3rem;
+        }
+
+        .btn-mobile-action:active {
+            transform: scale(0.95);
+        }
+}
+
+@media (min-width: 992px) {
+    .mobile-container {
+        display: none;
+    }
+}

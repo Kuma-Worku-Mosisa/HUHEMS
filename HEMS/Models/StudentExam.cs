@@ -13,6 +13,8 @@ namespace HEMS.Models
 
         public DateTime StartDateTime { get; set; } // [cite: 121]
         public DateTime? EndDateTime { get; set; } // [cite: 124]
+        public bool TakenExam { get; set; }
+        public double Score { get; set; }
 
         [ForeignKey("StudentId")]
         public virtual Student Student { get; set; }

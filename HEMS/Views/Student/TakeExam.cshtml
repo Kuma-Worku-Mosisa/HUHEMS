@@ -1,10 +1,12 @@
 ﻿@model HEMS.Models.Question
 @{
     string examTitle = Model?.Exam?.ExamTitle ?? "Assessment";
+    // Using default mark if null
     decimal questionMark = Model?.Exam?.DefaultMark ?? 1.0m;
-    int currentIndex = ViewBag.Index;
-    int total = ViewBag.Total;
-    int durationMinutes = Model?.Exam?.DurationMinutes > 0 ? Model.Exam.DurationMinutes : 30;
+    int currentIndex = ViewBag.Index ?? 0;
+    int total = ViewBag.Total ?? 1;
+    // Fix: Fallback for duration to prevent JS errors
+    int durationMinutes = ViewBag.durationMinutes ?? 30;
 
     var answeredIndices = ViewBag.AnsweredIndices as List<int> ?? new List<int>();
     var flaggedIndices = ViewBag.FlaggedIndices as List<int> ?? new List<int>();
@@ -14,16 +16,6 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/exam-style.css" asp-append-version="true" />
-    <style>
-        .exam-secure-zone {
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .cursor-pointer {
-            cursor: pointer;
-        }
-    </style>
 }
 
 <div class="container-fluid py-4 exam-secure-zone">
@@ -34,9 +26,13 @@
                     <div class="exam-badge me-3"><i class="bi bi-pencil-square text-primary"></i></div>
                     <h5 class="mb-0 fw-bold text-dark">@examTitle</h5>
                 </div>
+
                 <div class="timer-display d-flex align-items-center px-3 py-2 bg-light rounded-pill border" id="timerContainer">
                     <i class="bi bi-clock-fill me-2 pulse-timer text-primary"></i>
-                    <span id="timer" class="font-monospace fw-bold">--:--:--</span>
+                    <span id="timer" class="font-monospace fw-bold me-3">--:--:--</span>
+                    <button type="button" id="toggleTimerVisibility" class="btn btn-sm p-0 border-0 text-muted">
+                        <i class="bi bi-eye-fill" id="eyeIcon"></i>
+                    </button>
                 </div>
             </div>
 
@@ -56,7 +52,7 @@
                                     <p class="small text-secondary">Mark: @questionMark.ToString("F2")</p>
                                 </div>
                             </div>
-                            <button type="button" id="flagToggle" class="btn @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") btn-sm w-100 py-2 shadow-sm">
+                            <button type="button" id="flagToggle" class="btn @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") btn-sm w-100 py-2">
                                 <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill" : "bi-flag") me-1"></i>
                                 <span>@(isCurrentlyFlagged ? "Remove Flag" : "Flag Q")</span>
                             </button>
@@ -64,9 +60,7 @@
 
                         <div class="col-md-10 p-4 p-lg-5">
                             <div class="question-container mb-4">
-                                <p class="question-text fs-5 text-dark leading-relaxed">@Model?.QuestionText</p>
-
-                                @* ADDED: Image Rendering for Students *@
+                                <p class="question-text fs-5 text-dark">@Model?.QuestionText</p>
                                 @if (!string.IsNullOrEmpty(Model?.ImagePath))
                                 {
                                     <div class="question-image my-3 text-center">
@@ -93,7 +87,7 @@
                                                 <input class="btn-check option-input" type="radio" name="choiceId"
                                                        value="@choice.ChoiceId" id="choice_@choice.ChoiceId" required
                                                        @(selectedChoiceId == choice.ChoiceId ? "checked" : "")>
-                                                <label class="choice-card d-flex align-items-center w-100 p-3 rounded-3 border cursor-pointer" for="choice_@choice.ChoiceId">
+                                                <label class="choice-card d-flex align-items-center w-100 p-3 rounded-3 border" for="choice_@choice.ChoiceId">
                                                     <span class="choice-alpha me-3">@choiceLetter</span>
                                                     <span class="choice-text">@choice.ChoiceText</span>
                                                 </label>
@@ -114,7 +108,7 @@
                 <div class="card-footer bg-white d-flex justify-content-between align-items-center p-4 border-top">
                     @if (currentIndex > 0)
                     {
-                        <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@(currentIndex - 1)" class="btn btn-light border px-4 rounded-pill">
+                        <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@(currentIndex - 1)" class="btn btn-outline-primary px-4 rounded-pill">
                             <i class="bi bi-arrow-left me-2"></i>Previous
                         </a>
                     }
@@ -126,13 +120,13 @@
 
                     @if (currentIndex == total - 1)
                     {
-                        <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#reusableConfirmModal" data-title="Finish Attempt?" data-message="Are you sure you want to submit your final answers?" data-target="examForm" data-type="form">
+                        <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#reusableConfirmModal" data-title="Finish Attempt?" data-message="Submit final answers?" data-target="examForm" data-type="form">
                             Finish Attempt <i class="bi bi-check2-all ms-2"></i>
                         </button>
                     }
                     else
                     {
-                        <button type="button" onclick="submitExamForm()" class="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow-sm">
+                        <button type="button" onclick="submitExamForm()" class="btn btn-primary px-5 py-2 rounded-pill fw-bold">
                             Next Question <i class="bi bi-arrow-right ms-2"></i>
                         </button>
                     }
@@ -142,15 +136,16 @@
 
         <div class="col-md-3">
             <div class="sticky-nav">
-                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-header bg-dark text-white fw-bold py-3">
-                        <i class="bi bi-grid-3x3-gap me-2"></i> Questions Navigation
+                        <i class="bi bi-grid-3x3-gap me-2"></i> Navigation
                     </div>
                     <div class="card-body">
                         <div class="question-grid">
                             @for (int i = 0; i < total; i++)
                             {
-                                <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@i" id="nav-box-@i" class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
+                                <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@i" id="nav-box-@i"
+                                   class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
                                     @(i + 1)
                                 </a>
                             }
@@ -165,46 +160,75 @@
 <partial name="_ConfirmationModal" />
 
 @section Scripts {
-    <script src="~/js/ui-interactions.js" asp-append-version="true"></script>
-    <script src="~/js/exam-core.js" asp-append-version="true"></script>
+  <script src="~/js/ui-interactions.js" asp-append-version="true"></script>
+  <script src="~/js/exam-core.js" asp-append-version="true"></script>
     <script>
         $(function() {
+            // Fix: Safe numeric conversion for JS
             const examId = parseInt($("#examIdField").val()) || 0;
             const currentIndex = @currentIndex;
             const durationMinutes = @durationMinutes;
-            handleResumeLogic(examId, currentIndex);
+
+            // Flag Toggle Logic
+            $("#flagToggle").on("click", function() {
+                const hiddenInput = $("#flaggedInput");
+                const navBox = $(`#nav-box-${currentIndex}`);
+                let isFlagged = hiddenInput.val() === "true";
+                isFlagged = !isFlagged;
+                hiddenInput.val(isFlagged);
+
+                $(this).toggleClass("btn-outline-secondary btn-danger");
+                $(this).find("i").toggleClass("bi-flag bi-flag-fill");
+                $(this).find("span").text(isFlagged ? "Remove Flag" : "Flag Q");
+                navBox.toggleClass("flagged", isFlagged);
+            });
+
+            // Timer Logic
             const storageKey = `exam_end_time_${examId}`;
             let endTime = localStorage.getItem(storageKey);
+
             if (!endTime) {
                 endTime = new Date().getTime() + (durationMinutes * 60 * 1000);
                 localStorage.setItem(storageKey, endTime);
             }
+
             function updateTimer() {
                 const now = new Date().getTime();
                 const distance = endTime - now;
+
                 if (distance < 0) {
                     clearInterval(timerInterval);
                     localStorage.removeItem(storageKey);
-                    document.getElementById("timer").innerHTML = "EXPIRED";
-                    document.getElementById("examForm").submit();
+                    $("#timer").text("EXPIRED");
+                    $("#examForm").submit();
                     return;
                 }
+
                 const h = Math.floor(distance / 3600000).toString().padStart(2, '0');
                 const m = Math.floor((distance % 3600000) / 60000).toString().padStart(2, '0');
                 const s = Math.floor((distance % 60000) / 1000).toString().padStart(2, '0');
-                document.getElementById("timer").innerHTML = `${h}:${m}:${s}`;
+
+                $("#timer").text(`${h}:${m}:${s}`);
+                if (distance < 60000) $("#timer").addClass("text-danger");
             }
+
             const timerInterval = setInterval(updateTimer, 1000);
             updateTimer();
-            initTabDetection();
-            initSecurity(examId);
-            initQuestionInteractions(currentIndex, examId, @(Model?.QuestionId ?? 0));
+
+            // Answer status update
+            $('.option-input').on('change', function() {
+                $('#answerStatus').removeClass('text-muted').addClass('text-success')
+                    .html('<i class="bi bi-check-circle-fill me-1"></i> Answered');
+                $(`#nav-box-${currentIndex}`).addClass('answered');
+            });
         });
+
         function clearChoice() {
             $('.option-input').prop('checked', false);
             $('#answerStatus').removeClass('text-success').addClass('text-muted').html('<i class="bi bi-circle me-1"></i> Not yet answered');
-            $('#nav-box-@currentIndex').removeClass('answered');
+            $(`#nav-box-@currentIndex`).removeClass('answered');
         }
-        function submitExamForm() { document.getElementById("examForm").submit(); }
+
+        function submitExamForm() { $("#examForm").submit(); }
     </script>
 }
