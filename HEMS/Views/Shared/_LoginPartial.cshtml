@@ -6,10 +6,33 @@
 <ul class="navbar-nav">
     @if (SignInManager.IsSignedIn(User))
     {
-        <li class="nav-item">
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                <button type="submit" class="nav-link btn btn-link text-white">Logout</button>
-            </form>
+        var isStudent = User.IsInRole("Student");
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-4"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="userDropdown" style="min-width:220px;">
+                <div class="px-3 py-2">
+                    <div class="fw-bold">@User.Identity?.Name</div>
+                    <div class="text-muted small">@(isStudent ? "Student" : "Coordinator")</div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="px-2">
+                    @if (isStudent)
+                    {
+                        <a class="btn btn-sm btn-outline-primary w-100 mb-2" asp-controller="Student" asp-action="ChangePassword">Change password</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-sm btn-outline-primary w-100 mb-2" asp-area="Identity" asp-page="/Account/Manage/Index">Change password</a>
+                    }
+
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-danger w-100">Logout</button>
+                    </form>
+                </div>
+            </div>
         </li>
     }
     else
