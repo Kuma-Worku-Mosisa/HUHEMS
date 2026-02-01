@@ -11,8 +11,61 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
 </head>
 <body class="auth-bg">
+
+    <!-- Top navbar (same style as dashboard) -->
+    <header class="top-navbar d-flex align-items-center shadow-sm px-4">
+        <div class="d-flex align-items-center">
+            <a asp-controller="Home" asp-action="Index" class="d-flex align-items-center text-decoration-none me-3">
+                <img src="~/images/haramaya-seal.jpg" alt="HU-HEMS" class="rounded-circle me-2" style="width:36px;height:36px;object-fit:cover;border:2px solid rgba(255,255,255,0.12);" />
+                <span class="h5 mb-0 fw-bold text-white">HU-HEMS</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="py-5">
+        <div class="container">
+            <div class="d-flex justify-content-center">
+                <div class="login-hero w-100">
+                    <div class="auth-card card shadow-sm">
+                        <div class="card-body">
+                            <div class="text-center auth-hero-title">
+                                <h3 class="fw-bold">LOGIN WITH YOUR ID</h3>
+                                <div class="auth-hero-sub">Enter your username &amp; password below</div>
+                            </div>
+
+                            <form asp-action="Login" method="post">
+                                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                                <div class="form-floating mb-3">
+                                    <input name="username" class="form-control" id="email" placeholder="name@example.com" required>
+                                    <label for="username">Username</label>
+                                </div>
+
+                                <div class="form-floating mb-4">
+                                    <input name="password" type="password" class="form-control" id="password" placeholder="Password" required>
+                                    <label for="password">Password</label>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-auth">LOG IN NOW</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer matching dashboard style -->
+    <footer class="footer mt-auto">
+        <div class="container-fluid px-4 h-100 d-flex align-items-center justify-content-center text-muted small">
+            &copy; @DateTime.Now.Year - Haramaya University Software Engineering Holistic Exam Management System
+        </div>
+    </footer>
 
     <div class="login-hero">
         <div class="auth-card card shadow-sm">
