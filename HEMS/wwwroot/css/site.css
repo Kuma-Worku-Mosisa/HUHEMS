@@ -84,13 +84,11 @@ body {
 /* --- Authentication (Login/Register) --- */
 /* Authentication layout for centered login card with decorative diagonal color block */
 .auth-bg {
-    background: #f3f4f6;
+    background: linear-gradient(180deg, #f3f4f6 0%, #eef2f6 100%);
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block; /* layout handled inside */
     width: 100%;
-    padding: 40px 20px;
+    padding: 0;
 }
 
 .login-hero {
@@ -102,16 +100,17 @@ body {
     background: #ffffff;
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     overflow: hidden;
+    margin: 40px auto; /* center and give space from header */
 }
 
 /* Decorative colored panel (was yellow in example) - now using #16812A */
 .login-hero::before {
     content: "";
     position: absolute;
-    left: -10%;
-    bottom: -10%;
-    width: 70%;
-    height: 60%;
+    left: -6%;
+    bottom: -6%;
+    width: 72%;
+    height: 62%;
     background: linear-gradient(180deg, #16812A 0%, #1a9a3a 100%);
     transform: skewY(-8deg);
     z-index: 1;
@@ -120,7 +119,7 @@ body {
 .auth-card {
     position: absolute;
     top: 50%;
-    left: 50%;
+    left: 57%; /* nudge right so centered over green panel */
     transform: translate(-50%, -50%);
     width: 360px;
     border-radius: 8px;
@@ -150,10 +149,17 @@ body {
 .btn-auth:hover { background-color: #126f23; transform: translateY(-2px); }
 
 /* small responsive adjustments */
-@media (max-width: 767.98px) {
-    .login-hero { height: auto; padding: 40px 20px; }
+@media (max-width: 991.98px) {
+    /* make the hero stack nicely on tablets and phones */
+    .login-hero { height: auto; padding: 40px 20px; margin: 20px auto; }
     .auth-card { position: static; transform: none; width: 100%; margin: 0 auto; }
-    .login-hero::before { height: 240px; width: 100%; left: 0; transform: skewY(-6deg); }
+    .login-hero::before { height: 240px; width: 120%; left: -10%; transform: skewY(-6deg); }
+}
+
+@media (max-width: 575.98px) {
+    .login-hero { padding: 24px 12px; }
+    .auth-card { padding: 22px; }
+    .auth-card .mb-3 img { width: 56px; height: 56px; }
 }
 
 /* --- Sidebar Structure --- */
