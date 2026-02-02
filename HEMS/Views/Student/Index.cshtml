@@ -79,7 +79,7 @@
                             <td class="text-center">
                                 <button type="button" class="btn btn-brand btn-sm px-4 rounded-pill"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#verifyModal-@item.ExamId">
+                                data-bs-target="#verifyInstrModal-@item.ExamId">
                                     Start Exam
                                 </button>
                             </td>
@@ -103,7 +103,7 @@
                     </div>
                     <button type="button" class="btn btn-brand w-100"
                             data-bs-toggle="modal"
-                            data-bs-target="#verifyModal-@item.ExamId">
+                            data-bs-target="#verifyInstrModal-@item.ExamId">
                         Start Assessment
                     </button>
                 </div>
@@ -112,6 +112,37 @@
 
         @foreach (var item in Model)
         {
+            <!-- Instruction Modal (large) -->
+            <div class="modal fade" id="verifyInstrModal-@item.ExamId" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="min-width:760px; max-width:95vw; min-height:520px;">
+                        <div class="modal-header bg-dark text-white border-0">
+                            <h5 class="modal-title fw-bold"><i class="bi bi-info-circle me-2"></i>Exam Instructions</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4 text-start fs-5">
+                            <h4 class="fw-bold mb-2">@item.ExamTitle</h4>
+                            <p class="text-muted mb-3">Duration: <strong>@item.DurationMinutes mins</strong> • Mark weight (per question): <strong>@item.DefaultMark.ToString("F2")</strong></p>
+                            <ol>
+                                <li>No external materials are allowed unless stated.</li>
+                                <li>Ensure a stable internet connection.</li>
+                                <li>Do not switch browser tabs or use developer tools.</li>
+                                <li>Follow invigilator instructions at all times.</li>
+                            </ol>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" value="1" id="acceptTermsInstr-@item.ExamId">
+                                <label class="form-check-label ms-2 fs-5" for="acceptTermsInstr-@item.ExamId">I have read and accept the instructions and terms and conditions.</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 p-3 bg-light">
+                            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" id="instrContinue-@item.ExamId" class="btn btn-brand px-4 fw-semibold" disabled>Continue to Enter Code</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Entry Modal (small) -->
             <div class="modal fade" id="verifyModal-@item.ExamId" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg">
@@ -120,20 +151,16 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <form asp-action="VerifyCode" method="post">
+                            @Html.AntiForgeryToken()
                             <div class="modal-body p-4 text-center">
-                                <div class="mb-3">
-                                    <h6 class="fw-bold text-dark">@item.ExamTitle</h6>
-                                    <p class="text-muted small">Please enter the <strong>4-digit Code</strong> provided by your invigilator to unlock this session.</p>
-                                </div>
-
+                                <h6 class="fw-bold text-dark">@item.ExamTitle</h6>
+                                <p class="text-muted small">Please enter the <strong>4-digit Code</strong> provided by your invigilator to unlock this session.</p>
                                 <input type="hidden" name="ExamId" value="@item.ExamId" />
-
                                 <div class="form-group mb-4">
-                                    <input type="text" name="EnteredCode"
+                                    <input type="text" name="enteredCode"
                                            class="form-control exam-id-input rounded-3 shadow-sm"
-                                           placeholder="----" required maxlength="10" autocomplete="off">
+                                           placeholder="----" required maxlength="4" autocomplete="off" inputmode="numeric" pattern="\d{4}">
                                 </div>
-
                                 <div class="alert alert-warning p-2 small border-0 mb-0">
                                     <i class="bi bi-info-circle me-1"></i> Once confirmed, your timer will start immediately.
                                 </div>
@@ -152,9 +179,48 @@
 
 @section Scripts {
     <script>
-        // Auto-focus the input when modal opens
-        $('.modal').on('shown.bs.modal', function () {
-            $(this).find('input[name="EnteredCode"]').focus();
+        // Instruction modal handler (large modal)
+        $('[id^="verifyInstrModal-"]').on('shown.bs.modal', function () {
+            const modal = $(this);
+            const id = (modal.attr('id') || '').split('-')[1];
+            if (!id) return;
+
+            const accept = modal.find(`#acceptTermsInstr-${id}`);
+            const cont = modal.find(`#instrContinue-${id}`);
+
+            function updateContinue() { cont.prop('disabled', !accept.is(':checked')); }
+            updateContinue();
+            accept.off('change').on('change', updateContinue);
+
+            cont.off('click').on('click', function () {
+                // hide instruction modal then show small code modal
+                try { bootstrap.Modal.getInstance(modal[0])?.hide(); } catch (e) { modal.modal('hide'); }
+                const codeModalEl = document.getElementById(`verifyModal-${id}`);
+                if (codeModalEl) {
+                    const m = new bootstrap.Modal(codeModalEl);
+                    m.show();
+                }
+            });
+        });
+
+        // Code modal handler (small modal): focus and validate code input
+        $('[id^="verifyModal-"]').on('shown.bs.modal', function () {
+            const modal = $(this);
+            const id = (modal.attr('id') || '').split('-')[1];
+            if (!id) return;
+
+            const codeInput = modal.find('input[name="enteredCode"]');
+            const submitBtn = modal.find('button[type="submit"]');
+
+            function updateSubmit() {
+                const val = (codeInput.val() || '').toString().trim();
+                const ok = /^\d{4}$/.test(val);
+                submitBtn.prop('disabled', !ok);
+            }
+
+            codeInput.off('input').on('input', updateSubmit);
+            updateSubmit();
+            codeInput.focus();
         });
     </script>
 }

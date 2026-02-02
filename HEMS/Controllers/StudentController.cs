@@ -74,6 +74,25 @@ namespace HEMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Ajax-friendly verification used by the exam lock modal
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> VerifyCodeAjax([FromForm] int examId, [FromForm] string enteredCode)
+        {
+            var exam = await _context.Exams.FindAsync(examId);
+            if (exam == null)
+            {
+                return Json(new { success = false, message = "Exam not found." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(enteredCode) && exam.ExamCode == enteredCode.Trim())
+            {
+                return Json(new { success = true });
+            }
+
+            return Json(new { success = false, message = "Invalid authorization code." });
+        }
+
         // 2. Security - Change Password Logic
         [HttpGet]
         public IActionResult ChangePassword() => View();
