@@ -7,7 +7,6 @@
                 <h3 class="mb-0 fw-bold text-white"><i class="bi bi-people-fill me-2"></i>Student Management</h3>
                 <p class="text-white-75 small mb-0">Upload CSV to generate student accounts automatically.</p>
             </div>
-            
         </div>
     </div>
 
@@ -21,7 +20,7 @@
             if (!fileInput || !feedback || !form) return;
 
             form.addEventListener('submit', async function(e){
-                // Basic client-side CSV check: read first few lines to extract ID numbers and pre-check duplicates
+                
                 const file = fileInput.files[0];
                 if (!file) return;
                 e.preventDefault();
@@ -38,10 +37,10 @@
                         return;
                     }
 
-                    // Try to guess header and ID column
+                   
                     const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
                     let idCol = header.findIndex(h => /id|identifier/i.test(h));
-                    if (idCol === -1) idCol = 1; // fallback assume second column
+                    if (idCol === -1) idCol = 1; 
 
                     const idNumbers = lines.slice(1).map(r => {
                         const cols = r.split(',');

@@ -1,16 +1,16 @@
 ﻿@model HEMS.Models.Question
 @{
     string examTitle = Model?.Exam?.ExamTitle ?? "Assessment";
-    // Using default mark if null
     decimal questionMark = Model?.Exam?.DefaultMark ?? 1.0m;
     int currentIndex = ViewBag.Index ?? 0;
     int total = ViewBag.Total ?? 1;
-    // Fix: Fallback for duration to prevent JS errors
     int durationMinutes = ViewBag.durationMinutes ?? 30;
 
     var answeredIndices = ViewBag.AnsweredIndices as List<int> ?? new List<int>();
     var flaggedIndices = ViewBag.FlaggedIndices as List<int> ?? new List<int>();
     int? selectedChoiceId = ViewBag.SelectedChoiceId;
+
+    // Server-side truth for the current question
     bool isCurrentlyFlagged = flaggedIndices.Contains(currentIndex);
 }
 
@@ -33,7 +33,7 @@
                     <button type="button" id="toggleTimerVisibility" class="btn btn-sm p-0 border-0 text-muted">
                         <i class="bi bi-eye-fill" id="eyeIcon"></i>
                     </button>
-                </div> 
+                </div>
             </div>
 
             <div class="card shadow-sm border-0 mb-4 overflow-hidden main-exam-card">
@@ -54,7 +54,7 @@
                             </div>
                             <button type="button" id="flagToggle" class="btn @(isCurrentlyFlagged ? "btn-danger" : "btn-outline-secondary") btn-sm w-100 py-2">
                                 <i class="bi @(isCurrentlyFlagged ? "bi-flag-fill" : "bi-flag") me-1"></i>
-                                <span>@(isCurrentlyFlagged ? "Remove Flag" : "Flag Q")</span>
+                                <span id="flagText">@(isCurrentlyFlagged ? "Remove Flag" : "Flag Q")</span>
                             </button>
                         </div>
 
@@ -72,7 +72,9 @@
                             <form asp-controller="Student" asp-action="SubmitAnswer" method="post" id="examForm">
                                 <input type="hidden" name="qId" value="@(Model?.QuestionId ?? 0)" />
                                 <input type="hidden" name="examId" id="examIdField" value="@(Model?.ExamId ?? 0)" />
-                                <input type="hidden" name="nextIdx" value="@(currentIndex + 1)" />
+
+                                <input type="hidden" name="nextIdx" id="nextIdxField" value="@(currentIndex + 1)" />
+
                                 <input type="hidden" name="flagged" id="flaggedInput" value="@isCurrentlyFlagged.ToString().ToLower()" />
 
                                 <div class="choices-stack">
@@ -108,13 +110,13 @@
                 <div class="card-footer bg-white d-flex justify-content-between align-items-center p-4 border-top">
                     @if (currentIndex > 0)
                     {
-                        <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@(currentIndex - 1)" class="btn btn-outline-primary px-4 rounded-pill">
+                        // CHANGED: Use onclick to save current state before going back
+                        <button type="button" onclick="navigateToIndex(@(currentIndex - 1))" class="btn btn-outline-primary px-4 rounded-pill">
                             <i class="bi bi-arrow-left me-2"></i>Previous
-                        </a>
+                        </button>
                     }
                     else
                     {
-
                         <span></span>
                     }
 
@@ -126,6 +128,7 @@
                     }
                     else
                     {
+                        // CHANGED: Use standard submit logic (nextIdx is set by default in the hidden input)
                         <button type="button" onclick="submitExamForm()" class="btn btn-primary px-5 py-2 rounded-pill fw-bold">
                             Next Question <i class="bi bi-arrow-right ms-2"></i>
                         </button>
@@ -144,10 +147,13 @@
                         <div class="question-grid">
                             @for (int i = 0; i < total; i++)
                             {
-                                <a asp-action="TakeExam" asp-route-examId="@Model?.ExamId" asp-route-index="@i" id="nav-box-@i"
-                                   class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")">
+                                // CHANGED: Replaced <a> with cursor-pointer divs that submit the form
+                                <div onclick="navigateToIndex(@i)"
+                                     id="nav-box-@i"
+                                     class="grid-box @(i == currentIndex ? "active" : "") @(answeredIndices.Contains(i) ? "answered" : "") @(flaggedIndices.Contains(i) ? "flagged" : "")"
+                                     style="cursor: pointer;">
                                     @(i + 1)
-                                </a>
+                                </div>
                             }
                         </div>
                     </div>
@@ -173,7 +179,8 @@
             initPersistentTimer(examId, durationMinutes);
             initTimerVisibility(examId);
             initTimerNotifications(examId);
-            initQuestionInteractions(currentIndex, examId, qId);
+            // We pass the examId explicitly to the interactions
+            initQuestionInteractions(currentIndex, examId);
             initAnswerStatus(currentIndex);
         });
     </script>
