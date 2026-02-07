@@ -15,10 +15,12 @@ namespace HEMS.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly Cloudinary _cloudinary;
+        private readonly IIdObfuscator _idObfuscator;
 
-        public ExamsController(ApplicationDbContext context)
+        public ExamsController(ApplicationDbContext context, IIdObfuscator idObfuscator)
         {
             _context = context;
+            _idObfuscator = idObfuscator;
             Account account = new Account(
                 "di0eli4di",
                 "113677216573493",
@@ -73,10 +75,10 @@ namespace HEMS.Controllers
         }
 
         // 4. Edit Exam (GET)
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string? id)
         {
-            if (id == null) return NotFound();
-            var exam = await _context.Exams.FindAsync(id);
+            if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
+            var exam = await _context.Exams.FindAsync(examId);
             if (exam == null) return NotFound();
             return View(exam);
         }
@@ -84,9 +86,9 @@ namespace HEMS.Controllers
         // 5. Edit Exam (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Exam exam)
+        public async Task<IActionResult> Edit(string id, Exam exam)
         {
-            if (id != exam.ExamId) return NotFound();
+            if (!_idObfuscator.TryDecode(id, out var examId) || examId != exam.ExamId) return NotFound();
 
             ModelState.Remove("Questions");
             ModelState.Remove("StudentExams");
@@ -116,9 +118,10 @@ namespace HEMS.Controllers
         // 5b. Publish Toggle Action
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Publish(int id)
+        public async Task<IActionResult> Publish(string id)
         {
-            var exam = await _context.Exams.FindAsync(id);
+            if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
+            var exam = await _context.Exams.FindAsync(examId);
             if (exam == null) return NotFound();
 
 
@@ -138,33 +141,34 @@ namespace HEMS.Controllers
         }
 
         // 6. View Exam Details
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string? id)
         {
-            if (id == null) return NotFound();
+            if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
 
             var exam = await _context.Exams
                 .Include(e => e.Questions!)
                 .ThenInclude(q => q.Choices)
-                .FirstOrDefaultAsync(m => m.ExamId == id);
+                .FirstOrDefaultAsync(m => m.ExamId == examId);
 
             if (exam == null) return NotFound();
             return View(exam);
         }
 
         // 7. Reports
-        public async Task<IActionResult> Reports(int? id)
+        public async Task<IActionResult> Reports(string? id)
         {
-            if (id.HasValue)
+            if (!string.IsNullOrWhiteSpace(id))
             {
+                if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
                 var exam = await _context.Exams
                     .Include(e => e.Questions)
-                    .FirstOrDefaultAsync(e => e.ExamId == id);
+                    .FirstOrDefaultAsync(e => e.ExamId == examId);
 
                 if (exam == null) return NotFound();
 
                 int totalQuestionsCount = exam.Questions?.Count ?? 0;
                 var allStudents = await _context.Students.OrderBy(s => s.FullName).ToListAsync();
-                var attempts = await _context.ExamAttempts.Where(a => a.ExamId == id).ToListAsync();
+                var attempts = await _context.ExamAttempts.Where(a => a.ExamId == examId).ToListAsync();
 
                 var reportData = allStudents.Select(s =>
                 {
@@ -207,9 +211,10 @@ namespace HEMS.Controllers
         // 8. Delete Exam
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var exam = await _context.Exams.FindAsync(id);
+            if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
+            var exam = await _context.Exams.FindAsync(examId);
             if (exam != null)
             {
                 _context.Exams.Remove(exam);
@@ -221,16 +226,17 @@ namespace HEMS.Controllers
         // 9. Bulk Upload
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BulkUpload(int id, IFormFile examZip)
+        public async Task<IActionResult> BulkUpload(string id, IFormFile examZip)
         {
-            if (examZip == null || examZip.Length == 0) return RedirectToAction("Details", new { id });
+            if (!_idObfuscator.TryDecode(id, out var examId)) return NotFound();
+            if (examZip == null || examZip.Length == 0) return RedirectToAction("Details", new { id = _idObfuscator.Encode(examId) });
 
 
             var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempFolder);
 
             var existingInDb = await _context.Questions
-                .Where(q => q.ExamId == id)
+                .Where(q => q.ExamId == examId)
                 .Select(q => q.QuestionText.Trim().ToLower())
                 .ToListAsync();
 
@@ -266,7 +272,7 @@ namespace HEMS.Controllers
                         if (processedQuestions.Contains(lookupKey))
                             throw new Exception($"Duplicate found: '{cleanedText}' at row {rowCount}.");
 
-                        var question = new Question { ExamId = id, QuestionText = cleanedText, MarkWeight = 1.0m };
+                        var question = new Question { ExamId = examId, QuestionText = cleanedText, MarkWeight = 1.0m };
 
                         string? imageName = row.ImageName?.ToString();
                         if (!string.IsNullOrEmpty(imageName))
@@ -322,7 +328,7 @@ namespace HEMS.Controllers
             }
             finally { if (Directory.Exists(tempFolder)) Directory.Delete(tempFolder, true); }
 
-            return RedirectToAction("Details", new { id });
+            return RedirectToAction("Details", new { id = _idObfuscator.Encode(examId) });
         }
 
         private string GenerateRandomCode() => new Random().Next(1000, 9999).ToString();

@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<HEMS.Controllers.ExamReportViewModel>
+@inject HEMS.Services.IIdObfuscator IdObfuscator
 
 @{
     ViewData["Title"] = "Exam Report";
@@ -72,7 +73,7 @@
                                 </td>
                                 <td class="text-center">
                                     <a asp-action="Reports"
-                                       asp-route-id="@item.ExamId"
+                                       asp-route-id="@IdObfuscator.Encode(item.ExamId)"
                                        class="btn btn-sm btn-outline-primary">
                                         View Details
                                     </a>

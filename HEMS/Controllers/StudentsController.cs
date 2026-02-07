@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HEMS.Models;
 using HEMS.Data;
+using HEMS.Services;
 using System.Formats.Asn1;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -14,11 +15,13 @@ namespace HEMS.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly IIdObfuscator _idObfuscator;
 
-        public StudentsController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        public StudentsController(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IIdObfuscator idObfuscator)
         {
             _userManager = userManager;
             _context = context;
+            _idObfuscator = idObfuscator;
         }
 
         // Action to show the student list and upload form
@@ -112,10 +115,10 @@ namespace HEMS.Controllers
         }
 
         // GET: Students/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string? id)
         {
-            if (id == null) return NotFound();
-            var student = await _context.Students.FindAsync(id);
+            if (!_idObfuscator.TryDecode(id, out var studentId)) return NotFound();
+            var student = await _context.Students.FindAsync(studentId);
             if (student == null) return NotFound();
             return View(student);
         }
@@ -123,12 +126,12 @@ namespace HEMS.Controllers
         // POST: Students/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Student model)
+        public async Task<IActionResult> Edit(string id, Student model)
         {
-            if (id != model.StudentId) return NotFound();
+            if (!_idObfuscator.TryDecode(id, out var studentId) || studentId != model.StudentId) return NotFound();
             if (!ModelState.IsValid) return View(model);
 
-            var student = await _context.Students.FindAsync(id);
+            var student = await _context.Students.FindAsync(studentId);
             if (student == null) return NotFound();
 
             student.FullName = model.FullName;
@@ -144,12 +147,12 @@ namespace HEMS.Controllers
         }
 
         // GET: Students/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string? id)
         {
-            if (id == null) return NotFound();
+            if (!_idObfuscator.TryDecode(id, out var studentId)) return NotFound();
             var student = await _context.Students
                 .Include(s => s.User)
-                .FirstOrDefaultAsync(s => s.StudentId == id);
+                .FirstOrDefaultAsync(s => s.StudentId == studentId);
             if (student == null) return NotFound();
             return View(student);
         }

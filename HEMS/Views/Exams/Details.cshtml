@@ -1,9 +1,10 @@
 ﻿@model HEMS.Models.Exam
+@inject HEMS.Services.IIdObfuscator IdObfuscator
 <div class="col-md-8">
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Questions (@(Model.Questions?.Count ?? 0))</h5>
-            <a asp-controller="Questions" asp-action="Create" asp-route-examId="@Model.ExamId" class="btn btn-sm btn-outline-light">
+            <a asp-controller="Questions" asp-action="Create" asp-route-examId="@IdObfuscator.Encode(Model.ExamId)" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-plus-circle"></i> Add Question
             </a>
         </div>
@@ -65,7 +66,7 @@
             <h6 class="mb-0 text-success fw-bold"><i class="bi bi-file-earmark-zip-fill"></i> Bulk Upload Questions</h6>
         </div>
         <div class="card-body">
-            <form asp-controller="Exams" asp-action="BulkUpload" asp-route-id="@Model.ExamId" method="post" enctype="multipart/form-data">
+            <form asp-controller="Exams" asp-action="BulkUpload" asp-route-id="@IdObfuscator.Encode(Model.ExamId)" method="post" enctype="multipart/form-data">
                 <div class="input-group">
                     <input type="file" name="examZip" class="form-control" accept=".zip" required />
                     <button type="submit" class="btn btn-primary px-4">Upload ZIP</button>
