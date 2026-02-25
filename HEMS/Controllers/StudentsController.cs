@@ -62,20 +62,19 @@ namespace HEMS.Controllers
                 }
             }
 
-            // Generate credentials similar to bulk upload
+            // Generate credentials
             string last4 = student.IdNumber != null && student.IdNumber.Length >= 4 ? student.IdNumber.Substring(student.IdNumber.Length - 4) : student.IdNumber ?? "0000";
-            // sanitize and generate a base username
             string cleanName = new string(student.FullName.Where(char.IsLetterOrDigit).ToArray());
             if (string.IsNullOrWhiteSpace(cleanName)) cleanName = "student";
             string baseUsername = $"{cleanName}{last4.Replace("/", "")}";
             string generatedUsername = baseUsername;
             int suffix = 1;
-            // ensure username uniqueness
+
             while (await _userManager.FindByNameAsync(generatedUsername) != null)
             {
                 generatedUsername = baseUsername + suffix.ToString();
                 suffix++;
-                if (suffix > 1000) break; // avoid infinite loop
+                if (suffix > 1000) break;
             }
             string generatedPassword = $"{generatedUsername}@HUHEMS";
 
@@ -85,11 +84,11 @@ namespace HEMS.Controllers
                 Email = $"{generatedUsername}@huhems.edu",
                 EmailConfirmed = true
             };
-            // Ensure email doesn't already exist
+
             var emailExists = await _userManager.FindByEmailAsync(user.Email);
             if (emailExists != null)
             {
-                ModelState.AddModelError(string.Empty, "A user with the generated email already exists. Please modify the student's name or ID.");
+                ModelState.AddModelError(string.Empty, "A user with the generated email already exists.");
                 return View(student);
             }
 
@@ -101,7 +100,6 @@ namespace HEMS.Controllers
             }
 
             await _userManager.AddToRoleAsync(user, "Student");
-            // Mark that this user must change the default password
             await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
 
             student.UserId = user.Id;
@@ -155,7 +153,7 @@ namespace HEMS.Controllers
             return View(student);
         }
 
-        // POST: Students/Delete/5
+        // POST: Students/DeleteConfirmed
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int StudentId)
@@ -173,7 +171,6 @@ namespace HEMS.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Remove student first (won't cascade because we explicitly remove)
             _context.Students.Remove(student);
             await _context.SaveChangesAsync();
 
@@ -190,7 +187,6 @@ namespace HEMS.Controllers
             return RedirectToAction("Index");
         }
 
-        // Support POST to /Students/Delete as some views/forms may post to that action name
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int StudentId)
@@ -198,7 +194,6 @@ namespace HEMS.Controllers
             return await DeleteConfirmed(StudentId);
         }
 
-        // AJAX: Check if a student exists by ID number to prevent duplicates (used by Create form)
         [HttpGet]
         public async Task<IActionResult> CheckId(string idNumber)
         {
@@ -211,7 +206,6 @@ namespace HEMS.Controllers
             return Json(new { exists = exists, message = exists ? "User already exists with this ID number." : string.Empty });
         }
 
-        // AJAX: Check multiple IDs (bulk) - expects JSON array of idNumbers in request body
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CheckIdsBulk([FromBody] List<string> idNumbers)
@@ -224,12 +218,28 @@ namespace HEMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BulkUpload(IFormFile studentFile)
         {
             if (studentFile == null || studentFile.Length == 0)
             {
                 TempData["Error"] = "Please select a valid CSV file.";
                 return RedirectToAction("Index");
+            }
+
+            // Fixed: Defining local helper with nullable dictionary to resolve null reference warning
+            string GetField(IDictionary<string, object>? d, params string[] keys)
+            {
+                if (d == null) return string.Empty;
+                foreach (var k in keys)
+                {
+                    var match = d.Keys.FirstOrDefault(x => string.Equals(x, k, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                    {
+                        return d[match]?.ToString()?.Trim() ?? string.Empty;
+                    }
+                }
+                return string.Empty;
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -248,23 +258,12 @@ namespace HEMS.Controllers
                         {
                             var dict = rec as IDictionary<string, object>;
 
-                            // helper to read fields case-insensitively and accept common header variants
-                            string GetField(IDictionary<string, object> d, params string[] keys)
-                            {
-                                if (d == null) return string.Empty;
-                                foreach (var k in keys)
-                                {
-                                    var match = d.Keys.FirstOrDefault(x => string.Equals(x, k, StringComparison.OrdinalIgnoreCase));
-                                    if (match != null)
-                                    {
-                                        return d[match]?.ToString()?.Trim() ?? string.Empty;
-                                    }
-                                }
-                                return string.Empty;
-                            }
-
-                            string fullName = GetField(dict, "FullName", "Full Name", "Name", "fullname");
-                            string idNumber = GetField(dict, "IdNumber", "ID", "Identifier", "Id Number");
+                            // Mapping headers from AddStudents.csv
+                            string fullName = GetField(dict, "FullName", "Full Name", "Name");
+                            string idNumber = GetField(dict, "IdNumber", "ID", "Identifier");
+                            string gender = GetField(dict, "Gender", "Sex");
+                            string academicYear = GetField(dict, "AcademicYear", "Year");
+                            string department = GetField(dict, "Department", "Dept");
 
                             if (string.IsNullOrWhiteSpace(fullName))
                             {
@@ -272,24 +271,22 @@ namespace HEMS.Controllers
                                 continue;
                             }
 
-                            // Prevent duplicates by ID number
                             if (!string.IsNullOrWhiteSpace(idNumber) && await _context.Students.AnyAsync(s => s.IdNumber == idNumber))
                             {
                                 skipped.Add($"{fullName} ({idNumber}): already exists");
                                 continue;
                             }
 
-                            // Prepare student entity
+                            // Prepare student entity with all fields from CSV
                             var student = new Student
                             {
                                 FullName = fullName,
                                 IdNumber = idNumber,
-                                Gender = "",
-                                AcademicYear = "",
-                                Department = ""
+                                Gender = gender,
+                                AcademicYear = academicYear,
+                                Department = department
                             };
 
-                            // Generate a unique username
                             string last4 = student.IdNumber != null && student.IdNumber.Length >= 4 ? student.IdNumber.Substring(student.IdNumber.Length - 4) : student.IdNumber ?? "0000";
                             string cleanName = new string(student.FullName.Where(char.IsLetterOrDigit).ToArray());
                             if (string.IsNullOrWhiteSpace(cleanName)) cleanName = "student";
@@ -343,15 +340,7 @@ namespace HEMS.Controllers
                 }
 
                 await transaction.CommitAsync();
-                // Summarize results for user feedback
-                var summary = $"Bulk upload completed. Created: {createdCount}. Skipped: {skipped.Count}.";
-                if (skipped.Any())
-                {
-                    // include a few examples of skipped reasons
-                    var examples = string.Join("; ", skipped.Take(5));
-                    summary += " Examples: " + examples + (skipped.Count > 5 ? "..." : "");
-                }
-                TempData["Success"] = summary;
+                TempData["Success"] = $"Bulk upload completed. Created: {createdCount}. Skipped: {skipped.Count}.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
