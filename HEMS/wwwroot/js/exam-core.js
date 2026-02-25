@@ -1,14 +1,10 @@
-﻿/* =========================
-   TIMER (Persistent)
-========================= */
-function initPersistentTimer(examId, durationMinutes) {
+﻿function initPersistentTimer(examId, durationMinutes) {
     const storageKey = `exam_end_time_${examId}`;
     let endTime = localStorage.getItem(storageKey);
 
     if (!endTime) {
         endTime = Date.now() + durationMinutes * 60 * 1000;
         localStorage.setItem(storageKey, endTime);
-
         // Clear old notification markers
         Object.keys(localStorage).forEach(k => {
             if (k.startsWith(`exam_notify_15_${examId}_`) ||
@@ -56,18 +52,21 @@ function initTimerVisibility(examId) {
     const eyeIcon = document.getElementById("eyeIcon");
 
     function apply() {
-        timer.style.display = visible ? "" : "none";
-        pulse.style.display = visible ? "" : "none";
-        eyeIcon.className = visible ? "bi bi-eye-fill" : "bi bi-eye-slash";
+        if (timer && pulse && eyeIcon) {
+            timer.style.display = visible ? "" : "none";
+            pulse.style.display = visible ? "" : "none";
+            eyeIcon.className = visible ? "bi bi-eye-fill" : "bi bi-eye-slash";
+        }
     }
 
-    document.getElementById("toggleTimerVisibility")
-        .addEventListener("click", () => {
+    const toggleBtn = document.getElementById("toggleTimerVisibility");
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
             visible = !visible;
             localStorage.setItem(visKey, visible ? '1' : '0');
             apply();
         });
-
+    }
     apply();
 }
 
@@ -109,41 +108,72 @@ function showExamModal(title, message, type, autoCloseMs) {
     if (typeof updateModalContent !== "function") return;
 
     updateModalContent(title, message, null, type);
-    const modal = new bootstrap.Modal(
-        document.getElementById("reusableConfirmModal")
-    );
-    modal.show();
-
-    if (autoCloseMs) {
-        setTimeout(() => modal.hide(), autoCloseMs);
+    const modalElement = document.getElementById("reusableConfirmModal");
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        if (autoCloseMs) {
+            setTimeout(() => modal.hide(), autoCloseMs);
+        }
     }
 }
 
 /* =========================
-   QUESTION INTERACTIONS
+   QUESTION INTERACTIONS (FIXED FLAG LOGIC)
 ========================= */
-function initQuestionInteractions(index, examId, qId) {
+function initQuestionInteractions(index, examId) {
     const navBox = document.getElementById(`nav-box-${index}`);
     const flaggedInput = document.getElementById("flaggedInput");
+    const flagToggleBtn = document.getElementById("flagToggle");
+    const flagTextSpan = document.getElementById("flagText");
 
-    // Answer selection
+    // Answer selection UI update
     document.querySelectorAll(".option-input").forEach(opt => {
         opt.addEventListener("change", () => {
             navBox?.classList.add("answered");
         });
     });
 
-    // Flag toggle
-    $("#flagToggle").on("click", function () {
-        const isFlagged = !navBox.classList.contains("flagged");
+    // Flag toggle Logic
+    if (flagToggleBtn && flaggedInput) {
+        // 1. Initialize button state based on Hidden Input (Server Truth)
+        let isFlagged = flaggedInput.value === "true";
+        updateFlagUI(isFlagged);
 
-        navBox.classList.toggle("flagged", isFlagged);
-        flaggedInput.value = isFlagged;
+        // 2. Handle Click
+        flagToggleBtn.addEventListener("click", function () {
+            // Toggle state
+            isFlagged = !isFlagged;
 
-        $(this).toggleClass("btn-danger btn-outline-secondary");
-        $(this).find("i").toggleClass("bi-flag bi-flag-fill");
-        $(this).find("span").text(isFlagged ? "Remove Flag" : "Flag Q");
-    });
+            // Update Source of Truth (Hidden Input)
+            flaggedInput.value = isFlagged.toString().toLowerCase();
+
+            // Update UI
+            updateFlagUI(isFlagged);
+
+            // Update Sidebar immediately for visual feedback
+            if (navBox) {
+                if (isFlagged) navBox.classList.add("flagged");
+                else navBox.classList.remove("flagged");
+            }
+        });
+    }
+
+    function updateFlagUI(flagged) {
+        if (flagged) {
+            flagToggleBtn.classList.remove("btn-outline-secondary");
+            flagToggleBtn.classList.add("btn-danger");
+            flagToggleBtn.querySelector("i").classList.remove("bi-flag");
+            flagToggleBtn.querySelector("i").classList.add("bi-flag-fill");
+            if (flagTextSpan) flagTextSpan.textContent = "Remove Flag";
+        } else {
+            flagToggleBtn.classList.remove("btn-danger");
+            flagToggleBtn.classList.add("btn-outline-secondary");
+            flagToggleBtn.querySelector("i").classList.remove("bi-flag-fill");
+            flagToggleBtn.querySelector("i").classList.add("bi-flag");
+            if (flagTextSpan) flagTextSpan.textContent = "Flag Q";
+        }
+    }
 }
 
 /* =========================
@@ -161,7 +191,7 @@ function initAnswerStatus(index) {
 }
 
 /* =========================
-   CLEAR & SUBMIT
+   CLEAR, NAVIGATE & SUBMIT
 ========================= */
 function clearChoice() {
     $(".option-input").prop("checked", false);
@@ -171,6 +201,19 @@ function clearChoice() {
         .html('<i class="bi bi-circle me-1"></i> Not yet answered');
 }
 
+// Submits the form simply (used by Next button)
 function submitExamForm() {
     document.getElementById("examForm").submit();
+}
+
+// NEW: Updates the target index and then submits. 
+// This saves the CURRENT question's data (including flag) before moving.
+function navigateToIndex(index) {
+    const form = document.getElementById("examForm");
+    const nextIdxField = document.getElementById("nextIdxField");
+
+    if (form && nextIdxField) {
+        nextIdxField.value = index;
+        form.submit();
+    }
 }

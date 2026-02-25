@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<HEMS.Models.Exam>
+@inject HEMS.Services.IIdObfuscator IdObfuscator
 
 @{
     ViewData["Title"] = "Exam Management";
@@ -159,19 +160,19 @@
                             </td>
                             <td class="text-center action-col">
                                 <div class="btn-group shadow-sm border rounded-3 overflow-hidden d-inline-flex flex-nowrap">
-                                    <a asp-controller="Questions" asp-action="Create" asp-route-examId="@item.ExamId" class="btn btn-sm px-3 border-end bg-icon-add" title="Add Question">
+                                    <a asp-controller="Questions" asp-action="Create" asp-route-examId="@IdObfuscator.Encode(item.ExamId)" class="btn btn-sm px-3 border-end bg-icon-add" title="Add Question">
                                         <i class="bi bi-patch-plus-fill"></i>
                                     </a>
-                                    <a asp-action="Details" asp-route-id="@item.ExamId" class="btn btn-sm px-3 border-end bg-icon-view" title="Preview">
+                                    <a asp-action="Details" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn btn-sm px-3 border-end bg-icon-view" title="Preview">
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@item.ExamId" class="btn btn-sm px-3 border-end bg-icon-edit" title="Edit">
+                                    <a asp-action="Edit" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn btn-sm px-3 border-end bg-icon-edit" title="Edit">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <a asp-action="Reports" asp-route-id="@item.ExamId" class="btn btn-sm px-3 border-end bg-icon-stats" title="Results">
+                                    <a asp-action="Reports" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn btn-sm px-3 border-end bg-icon-stats" title="Results">
                                         <i class="bi bi-bar-chart-fill"></i>
                                     </a>
-                                    <form asp-action="Delete" asp-route-id="@item.ExamId" method="post" id="del_@item.ExamId" class="d-inline">
+                                    <form asp-action="Delete" asp-route-id="@IdObfuscator.Encode(item.ExamId)" method="post" id="del_@item.ExamId" class="d-inline">
                                         @Html.AntiForgeryToken()
                                         <button type="button" class="btn btn-sm px-3 bg-icon-delete"
                                                 data-bs-toggle="modal" data-bs-target="#reusableConfirmModal"
@@ -225,19 +226,19 @@
                     </div>
 
                     <div class="mobile-action-grid mt-3">
-                        <a asp-controller="Questions" asp-action="Create" asp-route-examId="@item.ExamId" class="btn-mobile-action bg-icon-add">
+                        <a asp-controller="Questions" asp-action="Create" asp-route-examId="@IdObfuscator.Encode(item.ExamId)" class="btn-mobile-action bg-icon-add">
                             <i class="bi bi-plus-square-fill"></i><span>Add Q</span>
                         </a>
-                        <a asp-action="Details" asp-route-id="@item.ExamId" class="btn-mobile-action bg-icon-view">
+                        <a asp-action="Details" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn-mobile-action bg-icon-view">
                             <i class="bi bi-eye-fill"></i><span>View</span>
                         </a>
-                        <a asp-action="Edit" asp-route-id="@item.ExamId" class="btn-mobile-action bg-icon-edit">
+                        <a asp-action="Edit" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn-mobile-action bg-icon-edit">
                             <i class="bi bi-pencil-fill"></i><span>Edit</span>
                         </a>
-                        <a asp-action="Reports" asp-route-id="@item.ExamId" class="btn-mobile-action bg-icon-stats">
+                        <a asp-action="Reports" asp-route-id="@IdObfuscator.Encode(item.ExamId)" class="btn-mobile-action bg-icon-stats">
                             <i class="bi bi-graph-up-arrow"></i><span>Stats</span>
                         </a>
-                        <form asp-action="Delete" asp-route-id="@item.ExamId" method="post" id="del_mob_@item.ExamId" class="w-100" style="grid-column: span 2;">
+                        <form asp-action="Delete" asp-route-id="@IdObfuscator.Encode(item.ExamId)" method="post" id="del_mob_@item.ExamId" class="w-100" style="grid-column: span 2;">
                             @Html.AntiForgeryToken()
                             <button type="button" class="btn-mobile-action w-100 bg-icon-delete border-0"
                                     data-bs-toggle="modal" data-bs-target="#reusableConfirmModal"

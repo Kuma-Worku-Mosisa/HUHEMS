@@ -1,5 +1,6 @@
 ﻿@using HEMS.Models
 @model dynamic
+@inject HEMS.Services.IIdObfuscator IdObfuscator
 
 @{
     ViewData["Title"] = "My Results";
@@ -15,6 +16,8 @@
         total = res.Exam?.Questions?.Count ?? 0;
         pct = total > 0 ? Math.Round((res.Score / (double)total) * 100, 2) : 0;
     }
+
+    int? decodedExamId = ViewBag.DecodedExamId as int?;
 }
 
 <style>
@@ -84,7 +87,7 @@
                                 </div>
                                 <div class="text-end">
                                     <div class="h3 fw-bold mb-0">@item.Score</div>
-                                    <a asp-action="ViewResult" asp-route-examId="@item.ExamId"
+                                    <a asp-action="ViewResult" asp-route-examId="@IdObfuscator.Encode(item.ExamId)"
                                        class="stretched-link btn btn-link p-0 text-decoration-none text-primary fw-semibold mt-1">
                                         Details <i class="bi bi-chevron-right ms-1"></i>
                                      
@@ -144,8 +147,7 @@
 @section Scripts {
     <script>
         // Clean up logic
-        const urlParams = new URLSearchParams(window.location.search);
-        const examId = urlParams.get('examId');
+            const examId = '@(decodedExamId?.ToString() ?? string.Empty)';
         if (examId) {
             localStorage.removeItem(`exam_end_time_${examId}`);
         }

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HEMS.Services;
 
 namespace HEMS.Controllers
 {
@@ -18,15 +19,18 @@ namespace HEMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IIdObfuscator _idObfuscator;
 
         public StudentController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            SignInManager<ApplicationUser> signInManager,
+            IIdObfuscator idObfuscator)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
+            _idObfuscator = idObfuscator ?? throw new ArgumentNullException(nameof(idObfuscator));
         }
 
         // 1. Dashboard - Show available exams
@@ -67,7 +71,7 @@ namespace HEMS.Controllers
 
             if (!string.IsNullOrWhiteSpace(enteredCode) && exam.ExamCode == enteredCode.Trim())
             {
-                return RedirectToAction(nameof(TakeExam), new { examId });
+                return RedirectToAction(nameof(TakeExam), new { examId = _idObfuscator.Encode(examId) });
             }
 
             TempData["Error"] = "Invalid Authorization Code. Please check with your invigilator.";
@@ -138,30 +142,32 @@ namespace HEMS.Controllers
         }
 
         // 3. Exam Taking Logic
-        public async Task<IActionResult> TakeExam(int examId, int index = 0)
+        public async Task<IActionResult> TakeExam(string examId, int index = 0)
         {
             var studentId = await GetStudentIdAsync();
             if (studentId == 0) return RedirectToAction(nameof(Index));
 
-            var alreadyTaken = await _context.StudentExams
-                .AnyAsync(se => se.StudentId == studentId && se.ExamId == examId && se.TakenExam);
+            if (!_idObfuscator.TryDecode(examId, out var decodedExamId)) return NotFound();
 
-            if (alreadyTaken) return RedirectToAction(nameof(ViewResult), new { examId });
+            var alreadyTaken = await _context.StudentExams
+                .AnyAsync(se => se.StudentId == studentId && se.ExamId == decodedExamId && se.TakenExam);
+
+            if (alreadyTaken) return RedirectToAction(nameof(ViewResult), new { examId = _idObfuscator.Encode(decodedExamId) });
 
             var exam = await _context.Exams
                 .Include(e => e.Questions)
                     .ThenInclude(q => q.Choices)
-                .FirstOrDefaultAsync(e => e.ExamId == examId);
+                .FirstOrDefaultAsync(e => e.ExamId == decodedExamId);
 
             if (exam == null || exam.Questions == null) return NotFound();
 
             var questions = exam.Questions.OrderBy(q => q.QuestionId).ToList();
-            if (index < 0 || index >= questions.Count) return RedirectToAction(nameof(ViewResult), new { examId });
+            if (index < 0 || index >= questions.Count) return RedirectToAction(nameof(ViewResult), new { examId = _idObfuscator.Encode(decodedExamId) });
 
             var currentQuestion = questions[index];
 
             var attempts = await _context.ExamAttempts
-                .Where(a => a.StudentId == studentId && a.ExamId == examId)
+                .Where(a => a.StudentId == studentId && a.ExamId == decodedExamId)
                 .ToListAsync();
 
             var existingAttempt = attempts.FirstOrDefault(a => a.QuestionId == currentQuestion.QuestionId);
@@ -174,7 +180,7 @@ namespace HEMS.Controllers
 
             ViewBag.Index = index;
             ViewBag.Total = questions.Count;
-            ViewBag.ExamId = examId;
+            ViewBag.ExamId = decodedExamId;
             ViewBag.DurationMinutes = exam.DurationMinutes;
 
             return View(currentQuestion);
@@ -217,18 +223,18 @@ namespace HEMS.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(TakeExam), new { examId = examId, index = nextIdx });
+            return RedirectToAction(nameof(TakeExam), new { examId = _idObfuscator.Encode(examId), index = nextIdx });
         }
 
         // 5. View Result
         [HttpGet]
-        public async Task<IActionResult> ViewResult(int? examId)
+        public async Task<IActionResult> ViewResult(string? examId)
         {
             var studentId = await GetStudentIdAsync();
             if (studentId == 0) return RedirectToAction(nameof(Index));
 
             // If no examId provided, show history list
-            if (!examId.HasValue || examId.Value == 0)
+            if (string.IsNullOrWhiteSpace(examId))
             {
                 var history = await _context.StudentExams
                     .Include(se => se.Exam)
@@ -239,21 +245,24 @@ namespace HEMS.Controllers
                 return View(history);
             }
 
-            var exam = await _context.Exams.Include(e => e.Questions).FirstOrDefaultAsync(e => e.ExamId == examId.Value);
+            if (!_idObfuscator.TryDecode(examId, out var decodedExamId)) return NotFound();
+            ViewBag.DecodedExamId = decodedExamId;
+
+            var exam = await _context.Exams.Include(e => e.Questions).FirstOrDefaultAsync(e => e.ExamId == decodedExamId);
             if (exam == null) return NotFound();
 
             var score = await _context.ExamAttempts
-                .CountAsync(a => a.StudentId == studentId && a.ExamId == examId.Value && a.IsCorrect);
+                .CountAsync(a => a.StudentId == studentId && a.ExamId == decodedExamId && a.IsCorrect);
 
             var studentExam = await _context.StudentExams
-                .FirstOrDefaultAsync(se => se.StudentId == studentId && se.ExamId == examId.Value);
+                .FirstOrDefaultAsync(se => se.StudentId == studentId && se.ExamId == decodedExamId);
 
             if (studentExam == null)
             {
                 studentExam = new StudentExam
                 {
                     StudentId = studentId,
-                    ExamId = examId.Value,
+                    ExamId = decodedExamId,
                     Score = score,
                     TakenExam = true,
                     StartDateTime = DateTime.UtcNow,

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using HEMS.Data;
 using HEMS.Models;
 using Microsoft.AspNetCore.Authorization;
+using HEMS.Services;
 
 namespace HEMS.Controllers
 {
@@ -10,25 +11,28 @@ namespace HEMS.Controllers
     public class QuestionsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IIdObfuscator _idObfuscator;
 
-        public QuestionsController(ApplicationDbContext context)
+        public QuestionsController(ApplicationDbContext context, IIdObfuscator idObfuscator)
         {
             _context = context;
+            _idObfuscator = idObfuscator;
         }
 
-        public async Task<IActionResult> Create(int examId)
+        public async Task<IActionResult> Create(string examId)
         {
-            var exam = await _context.Exams.FindAsync(examId);
+            if (!_idObfuscator.TryDecode(examId, out var decodedExamId)) return NotFound();
+            var exam = await _context.Exams.FindAsync(decodedExamId);
             if (exam == null) return NotFound();
 
-            ViewBag.ExamId = examId;
+            ViewBag.ExamId = decodedExamId;
             ViewBag.DefaultMark = exam.DefaultMark;
 
             // Ensure the strongly-typed view receives a non-null model so TagHelpers
             // and expressions that reference Model.* do not trigger a NullReferenceException.
             var model = new Question
             {
-                ExamId = examId,
+                ExamId = decodedExamId,
                 MarkWeight = exam.DefaultMark
             };
 
@@ -190,7 +194,7 @@ namespace HEMS.Controllers
                     if (!_context.Questions.Any(e => e.QuestionId == question.QuestionId)) return NotFound();
                     else throw;
                 }
-                return RedirectToAction("Details", "Exams", new { id = question.ExamId });
+                return RedirectToAction("Details", "Exams", new { id = _idObfuscator.Encode(question.ExamId) });
             }
             return View(question);
         }
@@ -205,7 +209,7 @@ namespace HEMS.Controllers
                 int examId = question.ExamId;
                 _context.Questions.Remove(question);
                 await _context.SaveChangesAsync();
-                return RedirectToAction("Details", "Exams", new { id = examId });
+                return RedirectToAction("Details", "Exams", new { id = _idObfuscator.Encode(examId) });
             }
             return RedirectToAction("Index", "Exams");
         }

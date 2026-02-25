@@ -15,6 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<IExamImportService, ExamImportService>();
+builder.Services.AddSingleton<IIdObfuscator, HashidsIdObfuscator>();
 
 // 2. Identity Configuration
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
